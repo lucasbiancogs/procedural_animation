@@ -2,7 +2,7 @@ extends Node2D
 
 var joints = []
 
-var joints_radius = [100, 100, 60, 60, 60, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 40, 40, 40, 40, 40, 38, 38]
+var joints_radius = [75, 100, 100, 60, 60, 60, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 40, 40, 40, 40, 40, 38, 38]
 var joint_distance = 100
 var should_draw_joints = false
 var should_draw_polygon = true
@@ -31,8 +31,8 @@ func _draw_eyes():
 	var left_eye = eyes[0]
 	var right_eye = eyes[1]
 	
-	left_eye.position = joints[0].get_left_eye(20)
-	right_eye.position = joints[0].get_right_eye(20)
+	left_eye.position = joints[1].get_left_eye(20)
+	right_eye.position = joints[1].get_right_eye(20)
 
 func _setup_eyes():
 	var left_eye = Eyes.new()
@@ -116,10 +116,13 @@ func _setup_joints():
 		new_joint.radius = joints_radius[i]
 		new_joint.joint_distance = joint_distance
 		new_joint.position = joints[i].position + Vector2(joints_radius[i], 0)
-		new_joint.chained_joint = joints[i]
+		new_joint.previous_joint = joints[i]
+		
+		joints[i - 1].next_joint = new_joint
+		
 		joints.append(new_joint)
 	
-	joints[0].chained_joint = joints[1]
+	joints[0].previous_joint = joints[1]
 	
 	for joint in joints:
 		add_child(joint)

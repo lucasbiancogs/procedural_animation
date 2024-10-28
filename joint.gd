@@ -6,7 +6,10 @@ var should_move = false
 var radius = 100
 var joint_distance = 100
 
-var chained_joint: Joint
+var previous_joint: Joint
+var next_joint: Joint
+
+var max_angle = PI / 4
 
 func _process(_delta):
 	if should_move:
@@ -15,9 +18,21 @@ func _process(_delta):
 		_follow_chain()
 
 func _follow_chain():
-	var normal = _direction().normalized()
-
-	position = chained_joint.position + (normal * chained_joint.joint_distance)
+	var previous_normal = _previous_joint_direction().normalized()
+	var _normal: Vector2
+	
+	if next_joint == null:
+		_normal = previous_normal
+	else:
+		var next_normal = _next_joint_direction().normalized()
+		var angle = previous_normal.angle_to(next_normal)
+	
+		if angle > 0:
+			_normal = previous_normal if angle > max_angle else Vector2.from_angle(max_angle)
+		else:
+			_normal = previous_normal if angle < -max_angle else Vector2.from_angle(-max_angle)
+		
+	position = previous_joint.position + (_normal * joint_distance)
 
 func get_right() -> Vector2:
 	return _get_point(3 * PI / 2) + position
@@ -40,14 +55,20 @@ func get_bottom() -> Vector2:
 func get_point(rad) -> Vector2:
 	return _get_point(rad) + position
 
-func _direction() -> Vector2:
-	var pos_a = chained_joint.position
+func _previous_joint_direction() -> Vector2:
+	var pos_a = previous_joint.position
+	var pos_b = position
+
+	return pos_a - pos_b if should_move else pos_b - pos_a
+
+func _next_joint_direction() -> Vector2:
+	var pos_a = next_joint.position
 	var pos_b = position
 
 	return pos_a - pos_b if should_move else pos_b - pos_a
 
 func _get_point(rad) -> Vector2:
-	return Vector2(radius * cos(rad + _direction().angle()), radius * sin(rad + _direction().angle()))
+	return Vector2(radius * cos(rad + _previous_joint_direction().angle()), radius * sin(rad + _previous_joint_direction().angle()))
 
 func _draw():
 	if should_draw:
