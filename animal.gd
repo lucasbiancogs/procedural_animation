@@ -5,9 +5,10 @@ var joints = []
 
 var joints_radius: Array
 var joint_distance: int
+var eye_index: int
 var color: Color
 var food_position
-var stroke_size = 15
+var stroke_size = 10
 var should_draw_joints = false
 var should_draw_body = true
 
@@ -47,19 +48,19 @@ func _draw_eyes():
 	var left_eye = eyes[0]
 	var right_eye = eyes[1]
 	
-	left_eye.position = joints[2].get_left_eye(left_eye.eye_size + stroke_size)
-	right_eye.position = joints[2].get_right_eye(right_eye.eye_size + stroke_size)
+	left_eye.position = joints[eye_index].get_left_eye(left_eye.eye_size + stroke_size)
+	right_eye.position = joints[eye_index].get_right_eye(right_eye.eye_size + stroke_size)
 
 func _draw_pupil():
 	var left_pupil = eyes[2]
 	var right_pupil = eyes[3]
 	
-	var left_pupil_center = joints[2].get_left_eye(_get_eye_size() + stroke_size)
+	var left_pupil_center = joints[eye_index].get_left_eye(_get_eye_size() + stroke_size)
 	var left_pupil_direction_to_food = to_global(left_pupil_center).direction_to(to_global(food_position)) if food_position != null else Vector2.ZERO
 	
 	left_pupil.position = left_pupil_center + (left_pupil_direction_to_food * _get_eye_size() / 2)
 	
-	var right_pupil_center = joints[2].get_right_eye(_get_eye_size() + stroke_size)
+	var right_pupil_center = joints[eye_index].get_right_eye(_get_eye_size() + stroke_size)
 	var right_pupil_direction_to_food = to_global(right_pupil_center).direction_to(to_global(food_position)) if food_position != null else Vector2.ZERO
 	
 	right_pupil.position = right_pupil_center + (right_pupil_direction_to_food * _get_eye_size() / 2)
@@ -75,7 +76,7 @@ func _points() -> Array:
 	return points
 
 func _get_eye_size() -> float: 
-	return joints_radius[2] / 5
+	return joints_radius[eye_index] / 5
 	
 func _setup_visibility():
 	line.visible = should_draw_body
@@ -125,7 +126,7 @@ func _setup_line():
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.width = joints_radius.max() * 2
-	line.width_curve = _get_width_curve()
+	line.width_curve = _get_width_curve(0)
 	
 	add_child(line)
 
@@ -135,15 +136,15 @@ func _setup_stroke():
 	stroke.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	stroke.end_cap_mode = Line2D.LINE_CAP_ROUND
 	stroke.width = (joints_radius.max() * 2) + stroke_size
-	stroke.width_curve = _get_width_curve()
+	stroke.width_curve = _get_width_curve(stroke_size)
 	
 	add_child(stroke)
 
-func _get_width_curve():
+func _get_width_curve(offset: float):
 	var width_curve = Curve.new()
 	
 	for i in joints_radius.size():
-		var width_ratio = float(joints_radius[i]) / float(joints_radius.max())
+		var width_ratio = float(joints_radius[i] + offset) / float(joints_radius.max() + offset)
 		var position = float(i) / joints_radius.size()
 		width_curve.add_point(Vector2(position, width_ratio))
 
