@@ -1,15 +1,16 @@
 class_name Joint
 extends Node2D
 
-var should_draw = true
+var should_draw: bool = true:
+	set(value):
+		should_draw = value
+		queue_redraw()
+
 var should_move = false
-var radius = 100
-var joint_distance = 100
+var radius: int
+var joint_distance: int
 
 var previous_joint: Joint
-var next_joint: Joint
-
-var max_angle = PI / 4
 
 func _process(_delta):
 	if should_move:
@@ -19,26 +20,8 @@ func _process(_delta):
 
 func _follow_chain():
 	var previous_normal = _previous_joint_direction().normalized()
-	var _normal: Vector2
-	
-	if next_joint == null:
-		_normal = previous_normal
-	else:
-		var next_normal = _next_joint_direction().normalized()
-		var angle = previous_normal.angle_to(next_normal)
-	
-		if angle > 0:
-			_normal = previous_normal if angle > max_angle else Vector2.from_angle(max_angle)
-		else:
-			_normal = previous_normal if angle < -max_angle else Vector2.from_angle(-max_angle)
 		
-	position = previous_joint.position + (_normal * joint_distance)
-
-func get_right() -> Vector2:
-	return _get_point(3 * PI / 2) + position
-
-func get_left() -> Vector2:
-	return _get_point(PI / 2) + position
+	position = previous_joint.position + (previous_normal * joint_distance)
 
 func get_left_eye(eye_radius: float) -> Vector2:
 	return (_get_point(PI / 2).normalized() * (radius - eye_radius)) + position
@@ -46,23 +29,11 @@ func get_left_eye(eye_radius: float) -> Vector2:
 func get_right_eye(eye_radius: float) -> Vector2:
 	return (_get_point(3 * PI / 2).normalized() * (radius - eye_radius)) + position
 
-func get_top() -> Vector2:
-	return _get_point(PI) + position
-	
-func get_bottom() -> Vector2:
-	return _get_point(0) + position
-
 func get_point(rad) -> Vector2:
 	return _get_point(rad) + position
 
 func _previous_joint_direction() -> Vector2:
 	var pos_a = previous_joint.position
-	var pos_b = position
-
-	return pos_a - pos_b if should_move else pos_b - pos_a
-
-func _next_joint_direction() -> Vector2:
-	var pos_a = next_joint.position
 	var pos_b = position
 
 	return pos_a - pos_b if should_move else pos_b - pos_a

@@ -2,5 +2,7 @@
 
 [ext_resource type="Script" path="res://procedural_animation.gd" id="1_s8uj0"]
 
-[node name="joint" type="Node2D"]
+[node name="procedural_animation" type="Node2D"]
 script = ExtResource("1_s8uj0")
+
+[node name="Camera2D" type="Camera2D" parent="."]

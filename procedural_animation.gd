@@ -1,129 +1,81 @@
 extends Node2D
 
-var joints = []
+@onready var camera = $Camera2D
 
-var joints_radius = [75, 100, 100, 60, 60, 60, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 40, 40, 40, 40, 40, 38, 38]
-var joint_distance = 100
-var should_draw_joints = false
-var should_draw_polygon = true
+var animals = [
+	{
+		'name': 'snake',
+		'joints_radius': [0, 75, 100, 100, 75, 60, 60, 60, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 40, 40, 40, 40, 40, 38, 38],
+		'joint_distance': 100,
+		'color': Color.CRIMSON,
+	},
+	{
+		'name': 'fish',
+		'joints_radius': [0, 30, 50, 60, 80, 80, 80, 70, 55, 35, 15],
+		'joint_distance': 80,
+		'color': Color.CORNFLOWER_BLUE,
+	},
+]
 
-var polygon: Polygon2D
-var eyes: Array
+var food = preload("res://food.tscn")
+
+var _current_animal: Animal
+var _current_animal_index = 0
+var _new_egg_timer: Timer
+var _new_animal_timer: Timer
 
 func _ready():
-	_setup_joints()
-	_setup_polygon()
-	_setup_eyes()
+	_setup_egg_timer()
+	_setup_animal_timer()
+	_new_animal()
+	_new_egg()
 
-func _process(_delta):
-	if should_draw_polygon:
-		_draw_polygon()
-		_draw_eyes()
+func _new_animal():
+	_current_animal = Animal.new()
+	_current_animal.joints_radius = animals[_current_animal_index]['joints_radius'].duplicate()
+	_current_animal.joint_distance = animals[_current_animal_index]['joint_distance']
+	_current_animal.color = animals[_current_animal_index]['color']
+	add_child(_current_animal)
 
-func _draw_polygon():
-	var points = _points()
-	
-	var curve = _smooth(points, 30)
-		
-	polygon.polygon = curve.get_baked_points()
+func _setup_egg_timer():
+	_new_egg_timer = Timer.new()
+	_new_egg_timer.one_shot = true
+	_new_egg_timer.wait_time = 5
+	_new_egg_timer.timeout.connect(_on_new_egg_timeout)
+	add_child(_new_egg_timer)
 
-func _draw_eyes():
-	var left_eye = eyes[0]
-	var right_eye = eyes[1]
+func _setup_animal_timer():
+	_new_animal_timer = Timer.new()
+	_new_animal_timer.one_shot = true
+	_new_animal_timer.wait_time = 0.5
 	
-	left_eye.position = joints[1].get_left_eye(20)
-	right_eye.position = joints[1].get_right_eye(20)
+	_new_animal_timer.timeout.connect(_on_new_animal_timeout)
+	add_child(_new_animal_timer)
 
-func _setup_eyes():
-	var left_eye = Eyes.new()
-	var right_eye = Eyes.new()
-	
-	add_child(left_eye)
-	add_child(right_eye)
-	
-	eyes.append(left_eye)
-	eyes.append(right_eye)
+func _new_egg():
+	_new_egg_timer.start()
 
-func _smooth(input: PackedVector2Array, radius: float) -> Curve2D:
-	var curve = Curve2D.new()
+func _on_new_egg_timeout():
+	var food_scene = food.instantiate()
+	var x_range = get_viewport_rect().size.x / 2 - 100
+	var y_range = get_viewport_rect().size.y / 2 - 100
+	var _position = camera.position + Vector2(randf_range(-x_range, x_range), randf_range(-y_range, y_range))
+	food_scene.position = _position
+	_current_animal.food_position = _position
+	add_child(food_scene)
 
-	#calculate first point
-	var start_dir = input[0].direction_to(input[1])
-	curve.add_point(input[0], - start_dir * radius, start_dir * radius)
+func _on_new_animal_timeout():
+	remove_child(_current_animal)
+	
+	if _current_animal_index == animals.size() - 1:
+		_current_animal_index = 0
+	else:
+		_current_animal_index += 1
+	
+	_new_animal()
+	_new_egg()
 
-	#calculate middle points
-	for i in range(1, input.size() - 1):
-		var dir = input[i-1].direction_to(input[i+1])
-		curve.add_point(input[i], -dir * radius, dir * radius)
-
-	#calculate last point
-	var end_dir = input[-1].direction_to(input[-2])
-	curve.add_point(input[-1], - end_dir * radius, end_dir * radius)
-
-	return curve
-
-func _points() -> Array:
-	var points = []
+func next_animal():
+	_new_animal_timer.start()
 	
-	# left points
-	for i in joints.size():
-		if (i == 0):
-			var left_top = joints[i].get_point((PI / 4) + PI)
-			points.append(left_top)
-			
-			var top = joints[i].get_top()
-			points.append(top)
-			
-			var right_top = joints[i].get_point( PI - (PI / 4))
-			points.append(right_top)
-			
-		var left = joints[i].get_left()
-		points.append(left)
-	
-	for i in joints.size():
-		var index = joints.size() - i - 1
-		
-		if i == 0:
-			var bottom = joints[index].get_bottom()
-			points.append(bottom)
-			
-		var point = joints[joints.size() - i - 1].get_right()
-		points.append(point)
-	
-	return points
-
-func _setup_polygon():
-	polygon = Polygon2D.new()
-	polygon.color = Color.WHITE
-	add_child(polygon)	
-
-func _setup_joints():
-	var first_joint = Joint.new()
-	first_joint.should_move = true
-	first_joint.should_draw = should_draw_joints
-	first_joint.joint_distance = joint_distance
-	first_joint.radius = joints_radius[0]
-	first_joint.position = Vector2(1500, 1000)
-	
-	joints.append(first_joint)
-	
-	joints_radius.remove_at(0)
-	
-	for i in joints_radius.size():
-		var new_joint = Joint.new()
-		new_joint.should_move = false
-		new_joint.should_draw = should_draw_joints
-		new_joint.radius = joints_radius[i]
-		new_joint.joint_distance = joint_distance
-		new_joint.position = joints[i].position + Vector2(joints_radius[i], 0)
-		new_joint.previous_joint = joints[i]
-		
-		joints[i - 1].next_joint = new_joint
-		
-		joints.append(new_joint)
-	
-	joints[0].previous_joint = joints[1]
-	
-	for joint in joints:
-		add_child(joint)
 	
