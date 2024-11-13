@@ -4,25 +4,31 @@ extends Node2D
 
 var animals = [
 	{
+		'name': 'lizard',
+		'joints_radius': [0, 30, 62, 68, 50, 70, 78, 81, 84, 74, 60, 38, 33, 20, 16, 14, 12, 12],
+		'joint_distance': 80,
+		'eye_index': 2,
+		'color': Color.LIGHT_SEA_GREEN,
+		'has_legs': true,
+		'has_fin': false
+	},
+	{
 		'name': 'snake',
 		'joints_radius': [0, 75, 100, 100, 90, 80, 70, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 44, 42, 40, 40, 40, 40, 40, 40, 38, 38],
 		'joint_distance': 100,
 		'eye_index': 2,
 		'color': Color.CRIMSON,
+		'has_legs': false,
+		'has_fin': false
 	},
 	{
 		'name': 'fish',
 		'joints_radius': [0, 73, 89, 92, 90, 88, 82, 69, 65, 56, 43, 39, 37, 24, 20],
-		'joint_distance': 75,
+		'joint_distance': 60,
 		'eye_index': 2,
 		'color': Color.CORNFLOWER_BLUE,
-	},
-	{
-		'name': 'lizard',
-		'joints_radius': [0, 62, 68, 50, 70, 78, 81, 84, 74, 60, 38, 33, 20, 16, 14, 12, 12],
-		'joint_distance': 80,
-		'eye_index': 1,
-		'color': Color.LIGHT_SEA_GREEN,
+		'has_legs': false,
+		'has_fin': true
 	},
 ]
 
@@ -45,6 +51,8 @@ func _new_animal():
 	_current_animal.joint_distance = animals[_current_animal_index]['joint_distance']
 	_current_animal.color = animals[_current_animal_index]['color']
 	_current_animal.eye_index = animals[_current_animal_index]['eye_index']
+	_current_animal.has_legs = animals[_current_animal_index]['has_legs']
+	_current_animal.has_fin = animals[_current_animal_index]['has_fin']
 	add_child(_current_animal)
 
 func _setup_egg_timer():

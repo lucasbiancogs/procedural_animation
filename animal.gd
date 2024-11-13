@@ -7,6 +7,8 @@ var joints_radius: Array
 var joint_distance: int
 var eye_index: int
 var color: Color
+var has_legs: bool
+var has_fin: bool
 var food_position
 var stroke_size = 10
 var should_draw_joints = false
@@ -14,15 +16,28 @@ var should_draw_body = true
 
 var line: Line2D
 var stroke: Line2D
-var eyes: Array
+var eyes: Array[Eyes]
+var legs: Array[Legs]
+# var fin: Array[Fin] No implementation yet
 
 func _ready():
 	_setup_joints()
-	_setup_stroke()
-	_setup_line()
+	
+	if has_legs:
+		_setup_legs()
+	
+	if has_fin:
+		_setup_side_fin()
+		
+	_setup_body_stroke()
+	_setup_body()
 	_setup_eyes()
 	_setup_pupil()
+	if has_fin:
+		_setup_upper_fin()
+		
 	_setup_visibility()
+	
 
 func _process(_delta):
 	_draw_eyes()
@@ -30,13 +45,39 @@ func _process(_delta):
 	_draw_line()
 	_draw_stroke()
 
+	_move_animal()
+	
+	if has_legs:
+		_move_legs()
+	
+	if has_fin:
+		_move_fin()
+
 func _input(event):
 	if event is InputEventKey:
 			if event.key_label == KEY_SPACE:
 					should_draw_joints = event.pressed
 					should_draw_body = !event.pressed
 					_setup_visibility()
-			
+
+func _move_animal():
+	joints[0].position = get_global_mouse_position()
+
+func _move_legs():
+	for i in legs.size():
+		var leg = legs[i]
+		var joint = joints[leg.joint_index]
+		leg.shoulder_position = joint.position
+		var dist = leg.shoulder_position.distance_to(leg.paw_position)
+	
+		if abs(dist) > leg.joint_distance * 15:
+			if i % 2 == 0:
+				leg.paw_position = (joint.get_top_left().normalized() * leg.joint_distance * 15) + joint.position
+			else:
+				leg.paw_position = (joint.get_top_right().normalized() * leg.joint_distance * 15) + joint.position
+
+func _move_fin():
+	print('No implementation yet')
 
 func _draw_line():
 	line.points = _points()
@@ -85,6 +126,8 @@ func _setup_visibility():
 		eye.visible = should_draw_body
 	for joint in joints:
 		joint.should_draw = should_draw_joints
+	for leg in legs:
+		leg.should_draw_joints = should_draw_joints
 
 func _setup_eyes():
 	var left_eye = Eyes.new()
@@ -120,7 +163,7 @@ func _setup_pupil():
 	eyes.append(left_pupil)
 	eyes.append(right_pupil)
 
-func _setup_line():
+func _setup_body():
 	line = Line2D.new()
 	line.default_color = color
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -130,7 +173,7 @@ func _setup_line():
 	
 	add_child(line)
 
-func _setup_stroke():
+func _setup_body_stroke():
 	stroke = Line2D.new()
 	stroke.default_color = Color.WHITE
 	stroke.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -152,11 +195,11 @@ func _get_width_curve(offset: float):
 
 func _setup_joints():
 	var first_joint = Joint.new()
-	first_joint.should_move = true
+	first_joint.anchor = true
 	first_joint.should_draw = should_draw_joints
 	first_joint.joint_distance = joint_distance
 	first_joint.radius = joints_radius[0]
-	first_joint.position = Vector2(1500, 1000)
+	first_joint.position = get_viewport_rect().size / 2
 	
 	joints.append(first_joint)
 	
@@ -164,7 +207,7 @@ func _setup_joints():
 	
 	for i in joints_radius.size():
 		var new_joint = Joint.new()
-		new_joint.should_move = false
+		new_joint.anchor = false
 		new_joint.should_draw = should_draw_joints
 		new_joint.radius = joints_radius[i]
 		new_joint.joint_distance = joint_distance
@@ -177,4 +220,45 @@ func _setup_joints():
 	
 	for joint in joints:
 		add_child(joint)
+
+func _setup_side_fin():
+	print('No implementation yet')
+
+func _setup_upper_fin():
+	print('No implementation yet')
+
+func _setup_legs():
+	var leg_1 = Legs.new()
+	leg_1.joint_index = 4
+	leg_1.shoulder_position = joints[leg_1.joint_index].position
+	leg_1.paw_position = joints[leg_1.joint_index].get_left() + joints[leg_1.joint_index].position
 	
+	
+	legs.append(leg_1)
+	
+	var leg_2 = Legs.new()
+	leg_2.joint_index = 4
+	leg_2.shoulder_position = joints[leg_2.joint_index].position
+	leg_2.paw_position = joints[leg_2.joint_index].get_right() + joints[leg_2.joint_index].position
+	
+	legs.append(leg_2)
+	
+	var leg_3 = Legs.new()
+	leg_3.joint_index = 8
+	leg_3.shoulder_position = joints[leg_3.joint_index].position
+	leg_3.paw_position = joints[leg_3.joint_index].get_left() + joints[leg_3.joint_index].position
+	
+	
+	legs.append(leg_3)
+	
+	var leg_4 = Legs.new()
+	leg_4.joint_index = 8
+	leg_4.shoulder_position = joints[leg_4.joint_index].position
+	leg_4.paw_position = joints[leg_4.joint_index].get_right() + joints[leg_4.joint_index].position
+	
+	legs.append(leg_4)
+	
+	for leg in legs:
+		leg.color = color
+		leg.stroke_size = stroke_size
+		add_child(leg)
